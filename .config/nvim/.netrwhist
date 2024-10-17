@@ -1,0 +1,5 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =3
+let g:netrw_dirhist_3='/home/smart-me/Development/mithral-hall-distro/layers/meta-mithral-hall-application/recipes-smartme/mithral-hall-wifi'
+let g:netrw_dirhist_2='/home/smart-me/Development/mithral-hall-distro/layers/meta-mithral-hall-application/recipes-smartme'
+let g:netrw_dirhist_1='/home/smart-me/Development/mithral-hall-distro/layers/meta-mithral-hall-application/recipes-smartme/mithral-hall-controller'
