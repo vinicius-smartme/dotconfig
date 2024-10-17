@@ -1,0 +1,20 @@
+# Ignore everything
+/*
+
+# But not these files...
+!.gitignore
+!README.md
+!LICENSE
+
+!.bashrc
+!.bash_aliases
+!.config
+.config/*
+!.config/rofi
+!.config/helix
+!.config/dunst
+!.config/i3
+!.dircolors
+!.emacs
+!.emacs.d
+!pavucontrol.ini

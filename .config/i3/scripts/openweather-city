@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+command -v jq >/dev/null 2>&1 || { echo >&2 "Program 'jq' required but it is not installed.
+Aborting."; exit 1; }
+command -v curl >/dev/null 2>&1 || { echo >&2 "Program 'curl' required but is not installed.
+Aborting."; exit 1; }
+
+# OpenWeather API ID
+# weather[0]
+#id   main          description                       icon code
+#200 	Thunderstorm 	thunderstorm with light rain 	    11d
+#201 	Thunderstorm 	thunderstorm with rain 	          11d
+#202 	Thunderstorm 	thunderstorm with heavy rain 	    11d
+#210 	Thunderstorm 	light thunderstorm 	              11d
+#211 	Thunderstorm 	thunderstorm 	                    11d
+#212 	Thunderstorm 	heavy thunderstorm 	              11d
+#221 	Thunderstorm 	ragged thunderstorm 	            11d
+#230 	Thunderstorm 	thunderstorm with light drizzle 	11d
+#231 	Thunderstorm 	thunderstorm with drizzle 	      11d
+#232 	Thunderstorm 	thunderstorm with heavy drizzle 	11d
+#
+#300 	Drizzle 	light intensity drizzle 	            09d
+#301 	Drizzle 	drizzle 	                            09d
+#302 	Drizzle 	heavy intensity drizzle 	            09d
+#310 	Drizzle 	light intensity drizzle rain 	        09d
+#311 	Drizzle 	drizzle rain 	                        09d
+#312 	Drizzle 	heavy intensity drizzle rain 	        09d
+#313 	Drizzle 	shower rain and drizzle 	            09d
+#314 	Drizzle 	heavy shower rain and drizzle 	      09d
+#321 	Drizzle 	shower drizzle 	                      09d
+#
+#500 	Rain 	light rain 	                              10d
+#501 	Rain 	moderate rain 	                          10d
+#502 	Rain 	heavy intensity rain 	                    10d
+#503 	Rain 	very heavy rain 	                        10d
+#504 	Rain 	extreme rain 	                            10d
+#511 	Rain 	freezing rain 	                          13d
+#520 	Rain 	light intensity shower rain 	            09d
+#521 	Rain 	shower rain 	                            09d
+#522 	Rain 	heavy intensity shower rain 	            09d
+#531 	Rain 	ragged shower rain 	                      09d
+#
+#600 	Snow 	light snow 	13d
+#601 	Snow 	snow 	13d
+#602 	Snow 	heavy snow 	13d
+#611 	Snow 	sleet 	13d
+#612 	Snow 	light shower sleet 	13d
+#613 	Snow 	shower sleet 	13d
+#615 	Snow 	light rain and snow 	13d
+#616 	Snow 	rain and snow 	13d
+#620 	Snow 	light shower snow 	13d
+#621 	Snow 	shower snow 	13d
+#622 	Snow 	heavy shower snow 	13d
+#
+#701 	Mist 	mist 	50d
+#711 	Smoke 	smoke 	50d
+#721 	Haze 	haze 	50d
+#731 	Dust 	sand/dust whirls 	50d
+#741 	Fog 	fog 	50d
+#751 	Sand 	sand 	50d
+#761 	Dust 	dust 	50d
+#762 	Ash 	volcanic ash 	50d
+#771 	Squall 	squalls 	50d
+#781 	Tornado 	tornado 	50d
+#
+#800 	Clear 	clear sky (day) 	    01d
+#             clear sky (night)     01n
+#
+#801 	Clouds 	few clouds: 11-25% (day) 	02d
+#                                              02n
+#802 	Clouds 	scattered clouds: 25-50% (day) 	03d
+#                                            03n
+#803 	Clouds 	broken clouds: 51-84% (day)	04d
+#                                              04n
+#804 	Clouds 	overcast clouds: 85-100% (day)	04d
+#                                              04n
+
+
+# To use this script you need to create an API key here https://home.openweathermap.org
+# You need to put your Open Weather APIKEY here:
+APIKEY="af7bfe22287c652d032a3064ffa44088"
+# find your City ID here: https://openweathermap.org/
+# search for your city and copy the ID from the URL inside the browser.
+BUTTWIL="2661299"
+CITY_ID="$BUTTWIL"
+URL="http://api.openweathermap.org/data/2.5/weather?id=${CITY_ID}&units=metric&APPID=${APIKEY}"
+
+WEATHER_RESPONSE=$(timeout --signal=1 2s curl -s "${URL}") ||  exit 1;
+
+CITY_LON=$(echo $WEATHER_RESPONSE | jq '.coord.lon')
+CITY_LAT=$(echo $WEATHER_RESPONSE | jq '.coord.lat')
+CITY_NAME=$(echo $WEATHER_RESPONSE | jq '.name')
+COUNTRY=$(echo "$WEATHER_RESPONSE" | jq '.sys.country')
+
+WEATHER_CONDITION=$(echo $WEATHER_RESPONSE | jq '.weather[0].main' | sed 's/"//g')
+WEATHER_DESC=$( echo "$WEATHER_RESPONSE" | jq '.weather[0].description' | sed 's/"//g')
+
+WEATHER_TEMP=$(echo $WEATHER_RESPONSE | jq '.main.temp')
+WEATHER_TEMP=${WEATHER_TEMP%.*}
+WEATHER_FEELS_LIKE=$(echo $WEATHER_RESPONSE | jq '.main.feels_like')
+WEATHER_TEMP_MIN=$(echo $WEATHER_RESPONSE | jq '.main.temp_min')
+WEATHER_TEMP_MAX=$(echo $WEATHER_RESPONSE | jq '.main.temp_max')
+WEATHER_HUMIDITY=$(echo $WEATHER_RESPONSE | jq '.main.humidity')
+
+VISIBILITY=$(echo $WEATHER_RESPONSE | jq '.visibility')
+
+WIND_DIR=$( echo "$WEATHER_RESPONSE" | jq '.wind.deg')
+WIND_SPEED=$( echo "$WEATHER_RESPONSE" | jq '.wind.speed')
+WIND_SPEED=$(awk "BEGIN {print 60*60*$WIND_SPEED/1000}")
+WIND_DIR=$(awk "BEGIN {print int(($WIND_DIR % 360)/22.5)}")
+DIR_ARRAY=( N NNE NE ENE E ESE SE SSE S SSW SW WSW W WNW NW NNW N )
+WIND_DIR=${DIR_ARRAY[WIND_DIR]}
+
+TIME_NOW=$( echo "$WEATHER_RESPONSE" | jq '.dt')
+SUNRISE=$( echo "$WEATHER_RESPONSE" | jq '.sys.sunrise')
+SUNSET=$( echo "$WEATHER_RESPONSE" | jq '.sys.sunset')
+WEATHER_ALERT=$( echo "$WEATHER_RESPONSE" | jq '.alerts[0].event' | sed 's/"//g')
+DAYTIME="n"
+
+if [[ "$TIME_NOW" > "$SUNRISE" ]] && [[ "$TIME_NOW" < "$SUNSET" ]]; then
+    DAYTIME="d"
+fi
+
+show_detailed_weather_popup() {
+  FG_COLOR="#bbbbbb"
+  BG_COLOR="#111111"
+  HLFG_COLOR="#111111"
+  HLBG_COLOR="#bbbbbb"
+  BORDER_COLOR="#222222"
+
+  RES_X=1920
+  RES_Y=1080
+  
+  ROFI_THEME=(-theme ~/.config/rofi/weather.rasi)
+  ROFI_COLORS=(-bc "${BORDER_COLOR}" -bg "${BG_COLOR}" -fg "${FG_COLOR}" \
+        -hlfg "${HLFG_COLOR}" -hlbg "${HLBG_COLOR}")
+  
+  ROFI_TEXT="$CITY_NAME, $COUNTRY ($CITY_LAT, $CITY_LON) $('\n')
+  Weather: $WEATHER_DESC
+     $WEATHER_TEMP°C (feels like $WEATHER_FEELS_LIKE°C)
+  : $WEATHER_TEMP_MIN°C, : $WEATHER_TEMP_MAX°C
+     Hum: $WEATHER_HUMIDITY%, Visib: $(($VISIBILITY/1000))Km"
+  rofi_options=(-e "${ROFI_TEXT}" \
+        "${ROFI_COLORS}" "${ROFI_THEME[@]}")
+  X_POS=$(($BLOCK_X - $RES_X/2))
+  Y_POS=$(($BLOCK_Y - $RES_Y/2 + 75))
+  #notify-send -i V "$ROFI_TEXT"
+  rofi "${rofi_options[@]}" -yoffset $Y_POS -xoffset $X_POS
+}
+
+case $BLOCK_BUTTON in
+  1) show_detailed_weather_popup ;; # left click
+  3) show_detailed_weather_popup ;; # right click
+esac
+
+WEATHER_COLOR= "\#ffffff"
+
+case $WEATHER_CONDITION in
+  'Thunderstorm')
+    WEATHER_ICON=" "
+    WEATHER_COLOR="\#ffff00"
+    ;;
+  'Drizzle')
+    WEATHER_ICON=" "
+    WEATHER_COLOR="\#0000ff"
+    ;;
+  'Clouds')
+    if [[ "$DESCRIPTION" =~ "few" ]]; then
+      WEATHER_ICON="🌤 "
+    elif [[ $"DESCRIPTION" =~ "scattered" ]]; then
+      WEATHER_ICON="⛅ "
+    elif [[ $"DESCRIPTION" =~ "broken" ]]; then
+      WEATHER_ICON="🌥 "
+    else
+      WEATHER_ICON="☁ "
+    fi
+    ;;
+  'Rain')
+    if [ -n $($"DESCRIPTION" | grep "shower") ]; then
+      WEATHER_ICON=""
+      WEATHER_COLOR="\#0000ff"
+    elif [ -n $($"DESCRIPTION" | grep "freezing") ]; then
+      WEATHER_ICON="󰙿"
+      WEATHER_COLOR="\#0000ff"
+    else
+      WEATHER_ICON=""
+      WEATHER_COLOR="\#0000ff"
+    fi
+    ;;
+  'Snow')
+    WEATHER_ICON=""
+    WEATHER_COLOR="\#00ffff"
+    ;;
+  'Clear')
+    if [ "$DAYTIME" == "d" ]; then
+      WEATHER_ICON=""
+      WEATHER_COLOR=#ffff00
+    else
+      WEATHER_ICON=""
+    fi
+    ;;
+  *)
+    WEATHER_ICON="🌫"
+    ;;
+esac
+
+#echo "${WEATHER_ICON}  ${WEATHER_TEMP}°C: ${WIND_SPEED} km/h ${WIND_DIR}"
+echo "${WEATHER_ICON}  ${WEATHER_TEMP}°C"
+echo "${WEATHER_ICON}  ${WEATHER_TEMP}°C"
+echo $WEATHER_COLOR
+  

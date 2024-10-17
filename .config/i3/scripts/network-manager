@@ -1,0 +1,38 @@
+#!/bin/bash
+
+COLOR_RED="#d64937"
+COLOR_YELLOW="#F0A64C"
+COLOR_BLUE="#0000FF"
+SERVICE_NAME="dbus-org.freedesktop.nm-dispatcher.service"
+
+nm_state_state()
+{
+    STATUS_OUTPUT=$(systemctl status $SERVICE_NAME)
+	if "$STATUS_OUTPUT" | grep -i running; then
+		return "running"
+	elif "$STATUS_OUTPUT" | grep -i enabled; then
+		return "inactive"
+	else 
+		return "disabled"
+	fi
+}
+
+case $BLOCK_BUTTON in
+    1) nm-connection-editor ;; # left click
+#   2) toggle ;; # middle click,
+    3) nm-applet ;; # right click
+esac
+
+case bluetooth_state in
+	running)
+		COLOR=$BLUE
+		;;
+	inactive)
+		COLOR=$YELLOW
+		;;
+	*)
+		COLOR=$RED
+		;;
+esac
+
+echo $COLOR

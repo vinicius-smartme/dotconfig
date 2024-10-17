@@ -1,0 +1,24 @@
+configuration {
+    font:             "Noto Sans Regular 10";
+    show-icons:       false;
+    icon-theme:       "Qogir";
+    scroll-method:    0;
+    disable-history:  false;
+    fullscreen:       false;
+    hide-scrollbar:   true;
+    sidebar-mode:     false;
+}
+
+@import "~/.config/rofi/config.rasi"
+
+window {
+    background-color: @background;
+    border:           0;
+    padding:          8;
+    transparency:     "real";
+    width:            225px;
+}
+listview {
+    lines:   2;
+    columns: 1;
+}
