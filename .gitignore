@@ -17,4 +17,5 @@
 !.dircolors
 !.emacs
 !.emacs.d
+!.tmux*
 !pavucontrol.ini
